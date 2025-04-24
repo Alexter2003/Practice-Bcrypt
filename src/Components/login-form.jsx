@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
+import bcrypt from 'bcryptjs'
 
 export default function LoginForm() {
     const [formData, setFormData] = useState({
@@ -11,7 +12,6 @@ export default function LoginForm() {
     const [errors, setErrors] = useState({})
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
-    const [rememberMe, setRememberMe] = useState(false)
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -37,20 +37,41 @@ export default function LoginForm() {
         return newErrors
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
         const formErrors = validateForm()
 
         if (Object.keys(formErrors).length === 0) {
-            setIsLoading(true)
-            // Aquí iría la lógica para enviar los datos al servidor
-            console.log("Datos de login:", formData, "Recordar sesión:", rememberMe)
+            try {
+                setIsLoading(true)
+                setErrors({})
 
-            // Simulando una petición al servidor
-            setTimeout(() => {
+                const users = JSON.parse(localStorage.getItem('users') || '[]')
+                const user = users.find(u => u.email === formData.email)
+
+                if (!user) {
+                    setErrors({ email: "Usuario no encontrado" })
+                    return
+                }
+
+                console.log("Comparando contraseñas:", formData.password, user.password)
+                const isPasswordValid = await bcrypt.compare(formData.password, user.password)
+
+                if (isPasswordValid) {
+                    alert("¡Inicio de sesión exitoso! La contraseña coincide.")
+                    setFormData({
+                        email: "",
+                        password: "",
+                    })
+                } else {
+                    setErrors({ password: "Contraseña incorrecta" })
+                }
+            } catch (error) {
+                console.error("Error durante el inicio de sesión:", error)
+                alert("Hubo un error durante el inicio de sesión. Por favor, intenta nuevamente.")
+            } finally {
                 setIsLoading(false)
-                alert("Inicio de sesión exitoso!")
-            }, 1500)
+            }
         } else {
             setErrors(formErrors)
         }
@@ -100,28 +121,6 @@ export default function LoginForm() {
                         </button>
                     </div>
                     {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
-                </div>
-
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                        <input
-                            id="remember-me"
-                            name="remember-me"
-                            type="checkbox"
-                            checked={rememberMe}
-                            onChange={() => setRememberMe(!rememberMe)}
-                            className="h-4 w-4 text-green-500 border-gray-600 rounded bg-gray-700"
-                        />
-                        <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-300">
-                            Recordarme
-                        </label>
-                    </div>
-
-                    <div className="text-sm">
-                        <a href="#" className="text-green-400 hover:underline">
-                            ¿Olvidaste tu contraseña?
-                        </a>
-                    </div>
                 </div>
 
                 <button

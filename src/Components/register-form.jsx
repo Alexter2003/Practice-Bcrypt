@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
+import bcrypt from 'bcryptjs'
 
 export default function RegisterForm() {
     const [formData, setFormData] = useState({
@@ -48,27 +49,55 @@ export default function RegisterForm() {
         return newErrors
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
         const formErrors = validateForm()
 
         if (Object.keys(formErrors).length === 0) {
-            setIsLoading(true)
-            // Aquí iría la lógica para enviar los datos al servidor
-            console.log("Datos de registro:", formData)
+            try {
+                setIsLoading(true)
 
-            // Simulando una petición al servidor
-            setTimeout(() => {
-                setIsLoading(false)
-                alert("Registro exitoso!")
-                // Resetear el formulario después del registro exitoso
+                // Verificar si el email ya está registrado
+                const users = JSON.parse(localStorage.getItem('users') || '[]')
+                const userExists = users.some(user => user.email === formData.email)
+
+                if (userExists) {
+                    setErrors({ email: "Este correo electrónico ya está registrado" })
+                    setIsLoading(false)
+                    return
+                }
+
+                // Generar el hash de la contraseña
+                const salt = await bcrypt.genSalt(10)
+                const hashedPassword = await bcrypt.hash(formData.password, salt)
+
+                // Crear objeto de usuario
+                const newUser = {
+                    name: formData.name,
+                    email: formData.email,
+                    password: hashedPassword,
+                    createdAt: new Date().toISOString()
+                }
+
+                // Guardar en localStorage
+                users.push(newUser)
+                localStorage.setItem('users', JSON.stringify(users))
+
+                // Resetear el formulario
                 setFormData({
                     name: "",
                     email: "",
                     password: "",
                     confirmPassword: "",
                 })
-            }, 1500)
+
+                alert("¡Registro exitoso!")
+            } catch (error) {
+                console.error("Error durante el registro:", error)
+                alert("Hubo un error durante el registro. Por favor, intenta nuevamente.")
+            } finally {
+                setIsLoading(false)
+            }
         } else {
             setErrors(formErrors)
         }

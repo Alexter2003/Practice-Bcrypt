@@ -55,6 +55,10 @@ export default function LoginForm() {
                 }
 
                 console.log("Comparando contraseñas:", formData.password, user.password)
+
+                // Se compara la contraseña ingresada con la contraseña almacenada
+                // Extrae el salt del hash almacenado
+                // Genera un nuevo hash con la contraseña ingresada y la compara con el hash almacenado
                 const isPasswordValid = await bcrypt.compare(formData.password, user.password)
 
                 if (isPasswordValid) {

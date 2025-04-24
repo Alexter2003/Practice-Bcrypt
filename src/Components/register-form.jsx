@@ -57,7 +57,6 @@ export default function RegisterForm() {
             try {
                 setIsLoading(true)
 
-                // Verificar si el email ya está registrado
                 const users = JSON.parse(localStorage.getItem('users') || '[]')
                 const userExists = users.some(user => user.email === formData.email)
 
@@ -67,8 +66,14 @@ export default function RegisterForm() {
                     return
                 }
 
-                // Generar el hash de la contraseña
+                // Se genera el hash con la libreria bcryptjs
+
+                // genSalt es una funcion que genera un salt aleatorio
+
+                // 10 es el numero de rondas o de iteraciones, mientras mas alto sea el numero
+                // mas tiempo tardara en generar el hash, pero va a ser mas seguro
                 const salt = await bcrypt.genSalt(10)
+                // hash es una funcion que genera un hash de la contraseña
                 const hashedPassword = await bcrypt.hash(formData.password, salt)
 
                 // Crear objeto de usuario
